@@ -191,3 +191,28 @@ func TestGetInstance(t *testing.T) {
         t.Error("should not have found a non-nil instance")
     }
 }
+
+
+func TestRemoveApp(t *testing.T) {
+    setUp()
+    a := getMockApp()
+    b := getMockApp()
+    b.Manifest.InstanceId = "foo11223"
+    Register(a)
+    Register(b)
+    Remove(a)
+    if _, ok := GetInstance(b.Manifest.InstanceId); !ok {
+        t.Error("Should contain instance of b")
+    }
+    if _, ok := GetInstance(a.Manifest.InstanceId); ok {
+        t.Error("Should not contain instance of b")
+    }
+    ver, _ := semver.NewVersion("1.1.1")
+    apps := capabilitySuppliers["capability1"][*ver]
+    if len(apps) != 1 {
+        t.Error("apps is incorrect length")
+    }
+    if apps[0] != b {
+        t.Error("returned incorrect app")
+    }
+}
