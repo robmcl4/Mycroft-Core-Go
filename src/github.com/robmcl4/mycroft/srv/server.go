@@ -9,6 +9,7 @@ import (
     "github.com/robmcl4/mycroft/app"
     "github.com/robmcl4/mycroft/cmd"
     "github.com/robmcl4/mycroft/dispatch"
+    "github.com/robmcl4/mycroft/registry"
 )
 
 
@@ -56,7 +57,7 @@ func acceptApp(lnr *net.TCPListener) (*app.App, error) {
 // Start listening for commands through this app's connection.
 // NOTE: this should likely only be called as a goroutine.
 func ListenForCommands(a *app.App) {
-    defer a.Connection.Close()
+    defer closeApp(a)
     smallBuff := make([]byte, 200)
     smallBuffI := 0
     for smallBuffI < len(smallBuff) {
@@ -94,4 +95,15 @@ func ListenForCommands(a *app.App) {
         }
     }
     log.Printf("Closing connection to app, garbage was read")
+}
+
+
+// perform all operations required to close this app
+// this really should be somewhere else in the code, but i can't figure out where
+// since most places would lead to circular references
+func closeApp(a *app.App) {
+    a.Connection.Close()
+    registry.Remove(a)
+    sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
+    dispatch.Enqueue(sc)
 }

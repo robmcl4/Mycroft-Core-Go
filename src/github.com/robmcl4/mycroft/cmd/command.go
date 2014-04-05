@@ -47,6 +47,12 @@ func internalParseCommand(a *app.App, blob []byte) (*Command, error) {
     switch verb {
     case "APP_MANIFEST":
         return NewAppManifest(a, body), nil
+    case "APP_UP":
+        return NewStatusChange(a, app.STATUS_UP, nil)
+    case "APP_DOWN":
+        return NewStatusChange(a, app.STATUS_DOWN, nil)
+    case "APP_IN_USE":
+        return NewStatusChange(a, app.STATUS_IN_USE, body)
     }
     return nil, fmt.Errorf("No matching verb found for %s", verb)
 }

@@ -30,6 +30,7 @@ func NewAppManifest(a *app.App, data []byte) (*Command) {
 
 // construct the app based on its manifest
 func (a *AppManifest) Execute() {
+    log.Println("Parsing application's manifest")
     man, err := decodeManifest(a.data)
     if err != nil {
         log.Printf("ERROR: app's manifest is invalid: %s", err)
