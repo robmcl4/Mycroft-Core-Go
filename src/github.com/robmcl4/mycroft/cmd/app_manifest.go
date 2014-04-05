@@ -145,8 +145,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
         }
         man.Capabilities = caps
     } else {
-        err = errors.New("Capabilities not supplied")
-        return
+        man.Capabilities = make([]*app.Capability, 0)
     }
 
     if depMap, ok := getMap(m, "dependencies"); ok {
@@ -157,8 +156,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
         }
         man.Dependencies = deps
     } else {
-        err = errors.New("Dependencies not supplied")
-        return
+        man.Dependencies = make([]*app.Capability, 0)
     }
     return
 }

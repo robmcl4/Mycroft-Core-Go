@@ -6,6 +6,7 @@ import (
     "strings"
     "errors"
     "fmt"
+    "log"
 )
 
 
@@ -15,7 +16,20 @@ type Command struct {
 
 
 // Parse a command given the command blob (verb and body, no message length)
-func ParseCommand(a *app.App, blob []byte) (*Command, error) {
+func ParseCommand(a *app.App, blob []byte) (*Command) {
+    ret, err := internalParseCommand(a, blob)
+    if err != nil {
+        log.Printf("General failure: %s\n", err.Error())
+        recieved := string(blob)
+        gf := NewGeneralFailure(a, recieved, err.Error())
+        ret = new(Command)
+        ret.Execute = gf.Execute
+    }
+    return ret
+}
+
+
+func internalParseCommand(a *app.App, blob []byte) (*Command, error) {
     str := string(blob)
     first_space := strings.Index(str, " ")
     var verb string
@@ -30,7 +44,8 @@ func ParseCommand(a *app.App, blob []byte) (*Command, error) {
         body = []byte(str[first_space+1:])
     }
 
-    if verb == "APP_MANIFEST" {
+    switch verb {
+    case "APP_MANIFEST":
         return NewAppManifest(a, body), nil
     }
     return nil, fmt.Errorf("No matching verb found for %s", verb)

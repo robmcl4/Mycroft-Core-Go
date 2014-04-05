@@ -83,7 +83,7 @@ func ListenForCommands(a *app.App) {
                 log.Println("ERROR:", err)
                 return
             }
-            cmd, err := cmd.ParseCommand(a, msgBuff[:n])
+            cmd := cmd.ParseCommand(a, msgBuff[:n])
             if err != nil {
                 log.Println("ERROR:", err)
                 return
