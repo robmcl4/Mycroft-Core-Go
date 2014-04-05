@@ -34,7 +34,14 @@ type Manifest struct {
 
 
 type App struct {
-    Connection *net.TCPConn
+    Connection *net.Conn
     Manifest *Manifest
-    Status string
+    Status int
+}
+
+
+func NewApp() (*App) {
+    ret := new(App)
+    ret.Status = STATUS_CONNECTED
+    return ret
 }
