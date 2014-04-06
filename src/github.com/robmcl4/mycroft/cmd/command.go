@@ -57,6 +57,8 @@ func internalParseCommand(a *app.App, blob []byte) (*Command, error) {
         return NewMsgQuery(a, body)
     case "MSG_BROADCAST":
         return NewMsgBroadcast(a, body)
+    case "MSG_QUERY_SUCCESS":
+        return NewMsgQuerySuccess(a, body)
     }
     return nil, fmt.Errorf("No matching verb found for %s", verb)
 }
