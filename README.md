@@ -9,7 +9,7 @@ over the c# implementation.
 Building
 --------
 
-1. Clone this repository
+1. Clone this repository with `git clone --recursive https://github.com/robmcl4/Mycroft-Core-Go`
 
 2. Run `export GOPATH=...` where `...` is the directory containing 'src' 'pkg'
 and 'bin' folders.
