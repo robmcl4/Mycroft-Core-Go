@@ -18,13 +18,13 @@ type AppManifest struct {
 }
 
 
-func NewAppManifest(a *app.App, data []byte) (*Command) {
+func NewAppManifest(a *app.App, data []byte) (*Command, error) {
     am := new(AppManifest)
     am.App = a
     am.data = data
     ret := new(Command)
     ret.Execute = am.Execute
-    return ret
+    return ret, nil
 }
 
 

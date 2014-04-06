@@ -109,6 +109,7 @@ func Remove(a *app.App) {
     removeCapabilities(a)
     removeDependencies(a)
     removeInstanceId(a)
+    removeAppsMessages(a)
 }
 
 
