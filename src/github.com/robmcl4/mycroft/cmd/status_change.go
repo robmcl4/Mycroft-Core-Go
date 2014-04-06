@@ -42,20 +42,22 @@ func NewStatusChange(a *app.App, status int, data []byte) (*Command, error) {
 
 // change the app's status and notify all those that depend on this app
 func (sc *StatusChange) Execute() {
-    if sc.App.Manifest != nil {
-        log.Printf("Changing status of %s to '%s'\n", sc.App.Manifest.InstanceId, sc.App.StatusString())
-    }
-    sc.App.Status = sc.NewStatus
-    sc.App.Priority = sc.Priority
-    if sc.App.Manifest != nil {
-        // notify everyone who depends on us
-        for _, cpb := range sc.App.Manifest.Capabilities {
-            for _, dependent := range registry.GetDependents(cpb) {
-                body := make(map[string]interface{})
-                inner := make(map[string]string)
-                inner[sc.App.Manifest.InstanceId] = sc.App.StatusString()
-                body[cpb.Name] = inner
-                dependent.Send("APP_DEPENDENCY", body)
+    if sc.App.Status != sc.NewStatus {
+        sc.App.Status = sc.NewStatus
+        sc.App.Priority = sc.Priority
+        if sc.App.Manifest != nil {
+            log.Printf("Changing status of %s to '%s'\n", sc.App.Manifest.InstanceId, sc.App.StatusString())
+        }
+        if sc.App.Manifest != nil {
+            // notify everyone who depends on us
+            for _, cpb := range sc.App.Manifest.Capabilities {
+                for _, dependent := range registry.GetDependents(cpb) {
+                    body := make(map[string]interface{})
+                    inner := make(map[string]string)
+                    inner[sc.App.Manifest.InstanceId] = sc.App.StatusString()
+                    body[cpb.Name] = inner
+                    dependent.Send("APP_DEPENDENCY", body)
+                }
             }
         }
     }

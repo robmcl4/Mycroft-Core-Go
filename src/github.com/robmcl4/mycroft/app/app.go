@@ -65,8 +65,8 @@ func (a *App) Send(verb string, body map[string]interface{}) (error) {
     toSend := append([]byte(verb), bodyBytes...)
     length := fmt.Sprintf("%d\n", len(toSend))
     toSend = append([]byte(length), toSend...)
-    _, err = a.Connection.Write(toSend)
-    return err
+    go a.Connection.Write(toSend)
+    return nil
 }
 
 

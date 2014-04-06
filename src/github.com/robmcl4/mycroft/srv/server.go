@@ -106,4 +106,9 @@ func closeApp(a *app.App) {
     registry.Remove(a)
     sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
     dispatch.Enqueue(sc)
+    if a.Manifest != nil {
+        log.Printf("Closing application %s", a.Manifest.InstanceId)
+    } else {
+        log.Printf("Closing application")
+    }
 }
