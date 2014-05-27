@@ -6,19 +6,23 @@ in [Go](http://golang.org/). Preliminary tests show large speed improvements
 over the c# implementation.
 
 
-Building
+Cloning
 --------
 
-1. Clone this repository with `git clone --recursive https://github.com/robmcl4/Mycroft-Core-Go`
+This repository is cloned in a manner similar to other go packages:
 
-2. Run `export GOPATH=...` where `...` is the directory containing 'src' 'pkg'
-and 'bin' folders.
+1. Go code is generally stored in one folder. Create a folder for your
+   go code if you do not have one already.
+2. Make sure the GOPATH environment variable is set to this folder.
+   Use the command `export GOPATH=ABSOLUTE_PATH_HERE`.
+3. Get the code using `go get github.com/robmcl4/Mycroft-Core-Go/mycroft`
 
-3. Compile using `go install github.com/robmcl4/mycroft`
+After this completes the code is available at `$GOPATH/src/github.com/robmcl4/Mycroft-Core-Go/mycroft`.
+This is a full git repository, edit the code here and commit changes here.
 
+A binary was also built as a part of `go get`, which is available in `$GOPATH/bin`
 
 Running
 -------
 
-After building, run with the command `$GOPATH/bin/mycroft`. Note that currently
-this application does not support c#.
+After building, run with the command `$GOPATH/bin/mycroft`.
