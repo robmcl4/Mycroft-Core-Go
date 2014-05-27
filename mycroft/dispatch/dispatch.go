@@ -2,7 +2,7 @@ package dispatch
 
 
 import (
-    "github.com/robmcl4/mycroft/cmd"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/cmd"
 )
 
 

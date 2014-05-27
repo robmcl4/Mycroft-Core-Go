@@ -3,8 +3,8 @@ package main
 import (
     "log"
     "flag"
-    "github.com/robmcl4/mycroft/srv"
-    "github.com/robmcl4/mycroft/dispatch"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/srv"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
 )
 
 func main() {

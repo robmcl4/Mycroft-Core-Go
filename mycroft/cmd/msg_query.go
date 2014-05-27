@@ -4,8 +4,8 @@ import (
     "log"
     "encoding/json"
     "errors"
-    "github.com/robmcl4/mycroft/app"
-    "github.com/robmcl4/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
 )
 
 

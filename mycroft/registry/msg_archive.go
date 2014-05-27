@@ -1,7 +1,7 @@
 package registry
 
 import (
-    "github.com/robmcl4/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
 )
 
 

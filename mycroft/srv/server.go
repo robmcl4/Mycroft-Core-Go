@@ -10,10 +10,10 @@ import (
     "crypto/tls"
     "crypto/x509"
     "io/ioutil"
-    "github.com/robmcl4/mycroft/app"
-    "github.com/robmcl4/mycroft/cmd"
-    "github.com/robmcl4/mycroft/dispatch"
-    "github.com/robmcl4/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/cmd"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
 )
 
 

@@ -3,7 +3,7 @@ package registry
 
 import (
     "testing"
-    "github.com/robmcl4/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/coreos/go-semver/semver"
 )
 
