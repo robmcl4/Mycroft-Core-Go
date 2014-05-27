@@ -6,6 +6,10 @@ import (
     "fmt"
     "strings"
     "strconv"
+    "errors"
+    "crypto/tls"
+    "crypto/x509"
+    "io/ioutil"
     "github.com/robmcl4/mycroft/app"
     "github.com/robmcl4/mycroft/cmd"
     "github.com/robmcl4/mycroft/dispatch"
@@ -13,25 +17,56 @@ import (
 )
 
 
-// Start listening for applications on the given port.
-// When new applications connect it will launch them in a new gorutine.
-func StartListen(port int) (error) {
+// Starts listening for client connections.
+// When new applications connect it will launch listeners in their own goroutine.
+func StartListen(port int, useTls bool, crtPath string, keyPath string, sname string) (error) {
     addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
     if err != nil {
-        log.Fatal(err)
         return err
     }
-    l, err := net.ListenTCP("tcp", addr)
+
+    var l net.Listener
+
+    l, err = net.ListenTCP("tcp", addr)
     if err != nil {
-        log.Fatal(err)
         return err
     }
+
+    if useTls {
+        cert, err := tls.LoadX509KeyPair(crtPath, keyPath)
+        if err != nil {
+            return err
+        }
+        conf := tls.Config{}
+
+        certs := make([]tls.Certificate, 1)
+        certs[0] = cert
+        conf.Certificates = certs
+
+        cp := x509.NewCertPool()
+        caCert, err := ioutil.ReadFile(crtPath)
+        if err != nil {
+            return err
+        }
+        if !cp.AppendCertsFromPEM(caCert) {
+            return errors.New("Could not append PEM cert")
+        }
+        conf.RootCAs = cp
+
+        conf.ServerName = sname
+
+        conf.ClientAuth = tls.RequireAndVerifyClientCert
+
+        conf.ClientCAs = cp
+
+        l = tls.NewListener(l, &conf)
+    }
+
     defer l.Close() // at the end of this method close the connection
     log.Println("Starting listen loop")
     for {
         a, err := acceptApp(l)
         if err != nil {
-            log.Fatal(err)
             return err
         } else {
             log.Println("Got connection")
@@ -43,7 +78,7 @@ func StartListen(port int) (error) {
 
 
 // Listen for and accept a new application connection
-func acceptApp(lnr *net.TCPListener) (*app.App, error) {
+func acceptApp(lnr net.Listener) (*app.App, error) {
     conn, err := lnr.Accept()
     if err != nil {
         return nil, err
@@ -103,10 +138,10 @@ func ListenForCommands(a *app.App) {
 // since most places would lead to circular references
 func closeApp(a *app.App) {
     a.Connection.Close()
-    registry.Remove(a)
     sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
-    dispatch.Enqueue(sc)
     if a.Manifest != nil {
+        registry.Remove(a)
+        dispatch.Enqueue(sc)
         log.Printf("Closing application %s", a.Manifest.InstanceId)
     } else {
         log.Printf("Closing application")
