@@ -1,6 +1,0 @@
-[submodule "src/github.com/coreos/go-semver"]
-	path = src/github.com/coreos/go-semver
-	url = https://github.com/coreos/go-semver.git
-[submodule "src/github.com/nu7hatch/gouuid"]
-	path = src/github.com/nu7hatch/gouuid
-	url = https://github.com/nu7hatch/gouuid
