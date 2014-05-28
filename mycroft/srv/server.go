@@ -1,3 +1,4 @@
+// Package srv implements the main Mycroft-core network listener.
 package srv
 
 import (
@@ -18,20 +19,23 @@ import (
 
 
 // Starts listening for client connections.
-// When new applications connect it will launch listeners in their own goroutine.
+// When a new application connects, launches listeners in a goroutine.
+// Returns an error when error occurs.
 func StartListen(port int, useTls bool, crtPath string, keyPath string, sname string) (error) {
+    // Create a listening address
     addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf(":%d", port))
     if err != nil {
         return err
     }
 
+    // start a new server and listen on the address
     var l net.Listener
-
     l, err = net.ListenTCP("tcp", addr)
     if err != nil {
         return err
     }
 
+    // wrap with TLS if required
     if useTls {
         cert, err := tls.LoadX509KeyPair(crtPath, keyPath)
         if err != nil {
@@ -62,7 +66,9 @@ func StartListen(port int, useTls bool, crtPath string, keyPath string, sname st
         l = tls.NewListener(l, &conf)
     }
 
-    defer l.Close() // at the end of this method close the connection
+    // at the end of this function close the server connection
+    defer l.Close()
+
     log.Println("Starting listen loop")
     for {
         a, err := acceptApp(l)
@@ -77,7 +83,8 @@ func StartListen(port int, useTls bool, crtPath string, keyPath string, sname st
 }
 
 
-// Listen for and accept a new application connection
+// Listens for and accepts a new application connection
+// Returns a reference to the App which was accepted
 func acceptApp(lnr net.Listener) (*app.App, error) {
     conn, err := lnr.Accept()
     if err != nil {
@@ -89,54 +96,99 @@ func acceptApp(lnr net.Listener) (*app.App, error) {
 }
 
 
-// Start listening for commands through this app's connection.
-// NOTE: this should likely only be called as a goroutine.
+// Starts listening for commands through the given app's connection.
+// Since this is a blocking function, it should likely be called in
+// a goroutine.
+// At the end of the function, closes the application's network resources.
 func ListenForCommands(a *app.App) {
     defer closeApp(a)
-    smallBuff := make([]byte, 200)
-    smallBuffI := 0
-    for smallBuffI < len(smallBuff) {
-        innerBuff := make([]byte, 1)
-        _, err := a.Connection.Read(innerBuff)
+
+    // loop forever consuming messages
+    for {
+        // get the next command
+        cmd, err := getCommand(a)
         if err != nil {
             log.Println("ERROR:", err)
             return
         }
-        smallBuff[smallBuffI] = innerBuff[0]
-        smallBuffI += 1
-        str := string(smallBuff[:smallBuffI])
-        if len(str) > 0 && strings.HasSuffix(str, "\n") {
-            // whoa we found a message length! read it
-            var msgLen int64
-            msgLen, err = strconv.ParseInt(str[:len(str)-1], 10, 64)
-            if err != nil {
-                log.Printf("ERROR: could not parse '%s': %s\n", str, err.Error())
-                return
-            }
-            msgBuff := make([]byte, msgLen)
-            n, err := a.Connection.Read(msgBuff)
-            if err != nil {
-                log.Println("ERROR:", err)
-                return
-            }
-            cmd := cmd.ParseCommand(a, msgBuff[:n])
-            if err != nil {
-                log.Println("ERROR:", err)
-                return
-            }
-            dispatch.Enqueue(cmd)
-            smallBuff = make([]byte, 200)
-            smallBuffI = 0
-        }
+
+        // enqueue the command
+        dispatch.Enqueue(cmd)
     }
-    log.Printf("Closing connection to app, garbage was read")
 }
 
 
-// perform all operations required to close this app
-// this really should be somewhere else in the code, but i can't figure out where
-// since most places would lead to circular references
+// Gets the next command from the application.
+// Returns the command and an error, if one occured.
+func getCommand(a *app.App) (*cmd.Command, error) {
+    // get the message length
+    msgLen, err := getMsgLen(a)
+    if err != nil {
+        return nil, err
+    }
+
+    // get the message body
+    msgBuff := make([]byte, msgLen)
+    totalRead := int64(0)
+    // loop until we've read enough bytes
+    for totalRead < msgLen {
+        n, err := a.Connection.Read(msgBuff[totalRead:])
+        if err != nil {
+            return nil, err
+        }
+        totalRead += int64(n)
+    }
+
+    // we have the body, parse the command
+    cmd := cmd.ParseCommand(a, msgBuff)
+    if err != nil {
+        return nil, err
+    }
+    return cmd, nil
+}
+
+
+// Gets the message length of the next message to be received by this application.
+// Returns the message length and an error, if any occured.
+func getMsgLen(a *app.App) (int64, error) {
+    // create a small buffer to store the bytes read
+    smallBuff := make([]byte, 200)
+    smallBuffI := 0
+    // loop while the buffer is not full
+    for smallBuffI < len(smallBuff) {
+        // read one byte
+        innerBuff := make([]byte, 1)
+        _, err := a.Connection.Read(innerBuff)
+        if err != nil {
+            return 0, err
+        }
+        // store that byte
+        smallBuff[smallBuffI] = innerBuff[0]
+        smallBuffI += 1
+        // convert to string, see if it ends in newline
+        str := string(smallBuff[:smallBuffI])
+        if len(str) > 0 && strings.HasSuffix(str, "\n") {
+            // this may be a valid message length
+            var msgLen int64
+            // parses using base 10, 64 bits
+            msgLen, err = strconv.ParseInt(str[:len(str)-1], 10, 64)
+            if err != nil {
+                return 0, err
+            }
+            // it parsed, return
+            return msgLen, nil
+        }
+    }
+    return 0, errors.New("Message length exceeded 200 byte buffer.")
+}
+
+
+// Performs all operations required to close this app.
+// Closes the network resource, queues a new STATUS_DOWN,
+// removes from the registry, and logs the close.
 func closeApp(a *app.App) {
+    // this really should be somewhere else in the code, but i can't figure out where
+    // since most places would lead to circular references
     a.Connection.Close()
     sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
     if a.Manifest != nil {
