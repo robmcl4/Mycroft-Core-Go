@@ -1,3 +1,4 @@
+// Package main contains the main entry point for the Mycroft server.
 package main
 
 import (
@@ -7,6 +8,8 @@ import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
 )
 
+
+// main parses command-line arguments and spawns a new server
 func main() {
     no_tls := flag.Bool("no-tls", false, "Whether to use TLS, default false")
     crt_path := flag.String("crt", "cert.crt", "Path to the TLS certificate, default `cert.crt`")
@@ -20,15 +23,15 @@ func main() {
 
     log.Println("Starting Server ...")
     if *no_tls {
-      log.Println("WARNING: not using TLS")
-      err := srv.StartListen(1847, false, "", "", "")
-      if err != nil {
-        log.Println(err)
-      }
+        log.Println("WARNING: not using TLS")
+        err := srv.StartListen(1847, false, "", "", "")
+        if err != nil {
+            log.Println(err)
+        }
     } else {
-      err := srv.StartListen(1847, true, *crt_path, *key_path, *sname)
-      if err != nil {
-        log.Println(err)
-      }
+        err := srv.StartListen(1847, true, *crt_path, *key_path, *sname)
+        if err != nil {
+            log.Println(err)
+        }
     }
 }
