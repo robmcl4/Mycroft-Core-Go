@@ -1,7 +1,7 @@
 Mycroft-Core [Go]
 =================
 
-[![GoDoc](https://godoc.org/github.com/robmcl4/Mycroft-Core-Go?status.png)](https://godoc.org/github.com/robmcl4/Mycroft-Core-Go)
+[![GoDoc](https://godoc.org/github.com/robmcl4/Mycroft-Core-Go?status.png)](https://godoc.org/github.com/robmcl4/Mycroft-Core-Go) [![Build Status](https://travis-ci.org/robmcl4/Mycroft-Core-Go.svg?branch=master)](https://travis-ci.org/robmcl4/Mycroft-Core-Go)
 
 This is a rewrite of [Mycroft-core](https://github.com/rit-sse-mycroft/core/)
 in [Go](http://golang.org/). Preliminary tests show large speed improvements
