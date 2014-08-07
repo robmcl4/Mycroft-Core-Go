@@ -3,6 +3,7 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "log"
     "errors"
     "encoding/json"
@@ -44,7 +45,7 @@ func NewMsgBroadcast(a *app.App, data []byte) (*Command, error) {
 
 func (mb *MsgBroadcast) Execute() {
     log.Printf("Sending message broadcast from %s\n", mb.App.Manifest.InstanceId)
-    registry.RecordMsg(mb.App, mb.Id)
+    msg_archive.RecordMsg(mb.App, mb.Id)
     body := make(map[string]interface{})
     body["fromInstanceId"] = mb.App.Manifest.InstanceId
     body["id"] = mb.Id
