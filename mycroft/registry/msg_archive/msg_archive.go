@@ -1,12 +1,11 @@
-package registry
+package msg_archive
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
 )
 
-
-var msgIdMap map[string]*app.App = make(map[string]*app.App)
-var appsMessages map[*app.App][]string = make(map[*app.App][]string)
+var msgIdMap map[string] *app.App = make(map[string]*app.App)
+var appsMessages map[*app.App] []string = make(map[*app.App][]string)
 
 
 // record that an app sent a message
@@ -28,7 +27,7 @@ func GetMsg(id string) (*app.App, bool) {
 
 
 // remove all of an app's messages from the archive
-func removeAppsMessages(a *app.App) {
+func RemoveAppsMessages(a *app.App) {
     if ids, ok := appsMessages[a]; ok {
         for _, id := range ids {
             delete(msgIdMap, id)

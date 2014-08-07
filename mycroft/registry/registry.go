@@ -2,6 +2,7 @@ package registry
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "github.com/coreos/go-semver/semver"
 )
 
@@ -109,7 +110,7 @@ func Remove(a *app.App) {
     removeCapabilities(a)
     removeDependencies(a)
     removeInstanceId(a)
-    removeAppsMessages(a)
+    msg_archive.RemoveAppsMessages(a)
 }
 
 
