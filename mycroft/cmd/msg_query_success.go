@@ -2,7 +2,7 @@ package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "log"
     "errors"
     "encoding/json"
@@ -48,7 +48,7 @@ func (mqs *MsgQuerySuccess) Execute() {
     body["fromInstanceId"] = mqs.App.Manifest.InstanceId
     body["id"] = mqs.Id
     body["ret"] = mqs.Ret
-    if recipient, ok := registry.GetMsg(mqs.Id); ok {
+    if recipient, ok := msg_archive.GetMsg(mqs.Id); ok {
         recipient.Send("MSG_QUERY_SUCCESS", body)
     } else {
         log.Printf("Warning: no app found to reply to for query id %s\n", mqs.Id)

@@ -6,6 +6,7 @@ import (
     "errors"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
 )
 
 
@@ -96,7 +97,7 @@ func (mq *MsgQuery) Execute() {
     if mq.App.Manifest != nil {
         log.Printf("Processing query from %s\n", mq.App.Manifest.InstanceId)
     }
-    registry.RecordMsg(mq.App, mq.Id)
+    msg_archive.RecordMsg(mq.App, mq.Id)
     body := make(map[string]interface{})
     body["fromInstanceId"] = mq.App.Manifest.InstanceId
     body["id"] = mq.Id
