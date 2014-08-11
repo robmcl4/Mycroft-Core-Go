@@ -3,12 +3,13 @@ package registry
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
+    "sync"
 )
 
 var capabilitySuppliers map[app.Capability] []*app.App = make(map[app.Capability][]*app.App)
 var capabilityDependents map[app.Capability] []*app.App = make(map[app.Capability][]*app.App)
 var instances map[string] *app.App = make(map[string]*app.App)
-
+var lock *sync.RWMutex = new(sync.RWMutex)
 
 // inserts into a given map so map[capability] points to the given app
 func addCapabilityToMap(m map[app.Capability] []*app.App, a *app.App, cpb *app.Capability) {
@@ -76,16 +77,22 @@ func removeInstanceId(a *app.App) {
 }
 
 
-// Registers an app with the registry. This is currently NOT thread-safe.
+// Registers an app with the registry.
 func Register(a *app.App) {
+    lock.Lock()
+    defer lock.Unlock()
+
     addCapabilities(a)
     addDependencies(a)
     addInstanceId(a)
 }
 
 
-// Removes an app from the registry. This is currently NOT thread-safe.
+// Removes an app from the registry.
 func Remove(a *app.App) {
+    lock.Lock()
+    defer lock.Unlock()
+
     removeCapabilities(a)
     removeDependencies(a)
     removeInstanceId(a)
@@ -95,6 +102,9 @@ func Remove(a *app.App) {
 
 // Gets a list of all apps that provide this capability
 func GetProviders(cpb *app.Capability) ([]*app.App) {
+    lock.RLock()
+    defer lock.RUnlock()
+
     if apps, ok := capabilitySuppliers[*cpb]; ok {
         ret := make([]*app.App, len(apps))
         copy(ret, apps)
@@ -106,6 +116,9 @@ func GetProviders(cpb *app.Capability) ([]*app.App) {
 
 // Gets a list of all apps that depend on this capability
 func GetDependents(cpb *app.Capability) ([]*app.App) {
+    lock.RLock()
+    defer lock.RUnlock()
+
     if apps, ok := capabilityDependents[*cpb]; ok {
         ret := make([]*app.App, len(apps))
         copy(ret, apps)
@@ -117,6 +130,9 @@ func GetDependents(cpb *app.Capability) ([]*app.App) {
 
 // Gets the app known by the given instance ID
 func GetInstance(instId string) (a *app.App, ok bool) {
+    lock.RLock()
+    defer lock.RUnlock()
+
     a, ok = instances[instId]
     return
 }
