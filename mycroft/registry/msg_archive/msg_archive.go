@@ -11,11 +11,7 @@ var appsMessages map[*app.App] []string = make(map[*app.App][]string)
 // record that an app sent a message
 func RecordMsg(a *app.App, id string) {
     msgIdMap[id] = a
-    if val, ok := appsMessages[a]; ok {
-        appsMessages[a] = append(val, id)
-    } else {
-        appsMessages[a] = []string{id}
-    }
+    appsMessages[a] = append(appsMessages[a], id)
 }
 
 

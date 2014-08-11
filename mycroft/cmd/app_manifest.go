@@ -132,7 +132,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
             err = errors.New("Version number is invalid")
             return
         }
-        man.Version = ver
+        man.Version = *ver
     } else {
         err = errors.New("Version number not supplied")
         return
@@ -173,7 +173,7 @@ func parseCapabilityMap(m map[string]interface{}) ([]*app.Capability, error) {
                 return nil, fmt.Errorf("Capability %s has invalid version", k)
             }
             cpb := new(app.Capability)
-            cpb.Version = ver
+            cpb.Version = *ver
             cpb.Name = k
             ret = append(ret, cpb)
         default:
