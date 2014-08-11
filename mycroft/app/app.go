@@ -19,7 +19,7 @@ const (
 
 
 type Capability struct {
-    Version *semver.Version
+    Version semver.Version
     Name string
 }
 
@@ -30,7 +30,7 @@ type Manifest struct {
     InstanceId string
     ApiVersion int
     Description string
-    Version *semver.Version
+    Version semver.Version
     Capabilities []*Capability
     Dependencies []*Capability
 }
