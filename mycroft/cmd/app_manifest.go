@@ -9,29 +9,12 @@ import (
     "errors"
     "log"
     "fmt"
-    "encoding/json"
 )
 
-type AppManifest struct {
-    App *app.App
-    data []byte
-}
-
-
-func NewAppManifest(a *app.App, data []byte) (*Command, error) {
-    am := new(AppManifest)
-    am.App = a
-    am.data = data
-    ret := new(Command)
-    ret.Execute = am.Execute
-    return ret, nil
-}
-
-
 // construct the app based on its manifest
-func (a *AppManifest) Execute() {
+func appManifest(a *app.App, body jsonData) (error) {
     log.Println("Parsing application's manifest")
-    man, err := decodeManifest(a.data)
+    man, err := decodeManifest(a.body)
     if err != nil {
         log.Printf("ERROR: app's manifest is invalid: %s", err)
         go sendManifestFail(a.App, err.Error())
@@ -74,16 +57,8 @@ func sendManifestOkAndDependencies(a *app.App) {
 }
 
 
-func decodeManifest(data []byte) (man *app.Manifest, err error) {
+func decodeManifest(m jsonData) (man *app.Manifest, err error) {
     man = new(app.Manifest)
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err = json.Unmarshal(data, &parsed)
-    if err != nil {
-        return
-    }
-    m := parsed.(map[string]interface{})
 
     // start loading in values from the manifest
     if str, ok := getString(m, "name"); ok && len(str) != 0 {
@@ -163,7 +138,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
 }
 
 
-func parseCapabilityMap(m map[string]interface{}) ([]*app.Capability, error) {
+func parseCapabilityMap(m jsonData) ([]*app.Capability, error) {
     ret := make([]*app.Capability, 0)
     for k, v := range m {
         switch vv := v.(type) {

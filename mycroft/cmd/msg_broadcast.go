@@ -6,53 +6,26 @@ import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "log"
     "errors"
-    "encoding/json"
 )
 
+func msgBroadcast(a *app.App, body jsonData) (error) {
+    var id string
+    content := body["content"]
 
-type MsgBroadcast struct {
-    App *app.App
-    Id string
-    Content interface{}
-}
+    log.Printf("Sending message broadcast from %s\n", a.Manifest.InstanceId)
 
-
-func NewMsgBroadcast(a *app.App, data []byte) (*Command, error) {
-    mb := new(MsgBroadcast)
-    mb.App = a
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
-    if err != nil {
-        return nil, err
-    }
-    m := parsed.(map[string]interface{})
-
-    if val, ok := getString(m, "id"); ok {
-        mb.Id = val
-    } else {
-        return nil, errors.New("No id found")
+    if id, ok := getString(m, "id"); !ok {
+        return errors.New("No id found")
     }
 
-    mb.Content = m["content"]
-
-    ret := new(Command)
-    ret.Execute = mb.Execute
-    return ret, nil
-}
-
-
-func (mb *MsgBroadcast) Execute() {
-    log.Printf("Sending message broadcast from %s\n", mb.App.Manifest.InstanceId)
-    msg_archive.RecordMsg(mb.App, mb.Id)
-    body := make(map[string]interface{})
-    body["fromInstanceId"] = mb.App.Manifest.InstanceId
-    body["id"] = mb.Id
-    body["content"] = mb.Content
-    for _, cpb := range mb.App.Manifest.Capabilities {
+    msg_archive.RecordMsg(a, mb.Id)
+    toSend := make(jsonData)
+    toSend["fromInstanceId"] = a.Manifest.InstanceId
+    toSend["id"] = id
+    toSend["content"] = content
+    for _, cpb := range a.Manifest.Capabilities {
         for _, dep := range registry.GetDependents(cpb) {
-            dep.Send("MSG_BROADCAST", body)
+            dep.Send("MSG_BROADCAST", toSend)
         }
     }
 }
