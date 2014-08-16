@@ -7,6 +7,7 @@ import (
     "fmt"
     "log"
     "github.com/coreos/go-semver/semver"
+    "sync"
 )
 
 
@@ -41,6 +42,7 @@ type App struct {
     Manifest *Manifest
     Status int
     Priority int
+    RWMutex sync.RWMutex
 }
 
 

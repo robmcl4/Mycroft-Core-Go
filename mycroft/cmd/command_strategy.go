@@ -7,7 +7,8 @@ import (
 
 
 type CommandStrategy interface {
-    Execute func()
+    GetVerb func() (string)
+    Execute func() (bool)
 }
 
 // -------- Sandard command executor -------------
@@ -32,12 +33,13 @@ func newCommandStrategy(a *app.App, verb string, body jsonData) (*CommandStrateg
 }
 
 
-func (c *commandStrategy) Execute() {
+func (c *commandStrategy) Execute() (bool) {
     var err error
+    ret := true
 
     switch c.verb {
     case "APP_MANIFEST":
-        err = c.appManifest()
+        ret = c.appManifest()
     case "APP_UP", "APP_DOWN", "APP_IN_USE":
         err = c.statusChange()
     case "MSG_QUERY":
@@ -54,12 +56,18 @@ func (c *commandStrategy) Execute() {
 
     if err != nil {
         b, _ := json.Marshall(c.body)
-        newFailedCommandStrategy(
+        return newFailedCommandStrategy(
             c.app,
             string(b),
             err.Error()
         ).Execute()
     }
+    return ret
+}
+
+
+func (c *commandStrategy) GetVerb() {
+    return c.verb
 }
 
 // -------- Failed command executor -------------
@@ -79,6 +87,12 @@ func newFailedCommandStrategy(a *app.App, received string, message string) (*Com
 }
 
 
-func (c *failedCommandExecutor) Execute() {
+func (c *failedCommandExecutor) Execute() (bool) {
     c.generalFailure()
+    return false
+}
+
+
+func (c *failedCommandExecutor) GetVerb() {
+    return "MSG_GENERAL_FAILURE"
 }

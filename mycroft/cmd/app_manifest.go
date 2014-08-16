@@ -1,4 +1,4 @@
-package cmd
+spackage cmd
 
 
 import (
@@ -12,23 +12,25 @@ import (
 )
 
 // construct the app based on its manifest
-func appManifest(a *app.App, body jsonData) (error) {
+func (c *commandStrategy) appManifest() (bool) {
     log.Println("Parsing application's manifest")
-    man, err := decodeManifest(a.body)
+
+    man, err := decodeManifest(c.body)
     if err != nil {
         log.Printf("ERROR: app's manifest is invalid: %s", err)
-        go sendManifestFail(a.App, err.Error())
-        return
+        sendManifestFail(c.app, err.Error())
+        return false
     }
     if _, exists := registry.GetInstance(man.InstanceId); exists {
         log.Printf("ERROR: app's instance id is already taken: %s", man.InstanceId)
-        go sendManifestFail(a.App, fmt.Sprintf("instanceId %s is in use", man.InstanceId))
-        return
+        sendManifestFail(c.app, fmt.Sprintf("instanceId %s is in use", man.InstanceId))
+        return false
     }
-    a.App.Status = app.STATUS_DOWN
-    a.App.Manifest = man
-    registry.Register(a.App)
-    sendManifestOkAndDependencies(a.App)
+    c.app.Status = app.STATUS_DOWN
+    c.app.Manifest = man
+    registry.Register(c.app)
+    sendManifestOkAndDependencies(c.app)
+    return true
 }
 
 
