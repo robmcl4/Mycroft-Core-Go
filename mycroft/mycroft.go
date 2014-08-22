@@ -5,7 +5,6 @@ import (
     "log"
     "flag"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/srv"
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
 )
 
 
@@ -17,9 +16,6 @@ func main() {
     sname := flag.String("srv-name", "mycroft", "This server's name for SNI")
 
     flag.Parse()
-
-    log.Println("Starting Dispatcher ...")
-    go dispatch.Dispatch()
 
     log.Println("Starting Server ...")
     if *no_tls {

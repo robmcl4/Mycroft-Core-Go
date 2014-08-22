@@ -9,13 +9,6 @@ import (
 )
 
 
-type StatusChange struct {
-    App *app.App
-    NewStatus int
-    Priority int
-}
-
-
 func NewStatusChange(a *app.App, status int, data []byte) (*Command, error) {
     sc := new(StatusChange)
     sc.App = a
@@ -41,14 +34,28 @@ func NewStatusChange(a *app.App, status int, data []byte) (*Command, error) {
 
 
 // change the app's status and notify all those that depend on this app
-func (sc *StatusChange) Execute() {
-    if sc.App.Status != sc.NewStatus {
-        sc.App.Status = sc.NewStatus
-        sc.App.Priority = sc.Priority
-        if sc.App.Manifest != nil {
-            log.Printf("Changing status of %s to '%s'\n", sc.App.Manifest.InstanceId, sc.App.StatusString())
-        }
-        if sc.App.Manifest != nil {
+func (c *commandStrategy) statusChange() (error) {
+    var newStatus int
+    priority := -1
+
+    switch c.verb {
+    case "APP_UP":
+        newStatus = app.STATUS_UP
+    case "APP_DOWN":
+        newStatus = app.STATUS_DOWN
+    case "APP_IN_USE":
+        newStatus = app.STATUS_IN_USE
+    default:
+        return errors.New("Unrecognized status verb")
+    }
+
+    if c.app.Status != newStatus {
+        c.app.Status = newStatus
+        c.app.Priority = priority
+
+        if c.app.Manifest != nil {
+            log.Printf("Changing status of %s to '%s'\n", c.app.Manifest.InstanceId, c.app.StatusString())
+
             // notify everyone who depends on us
             for _, cpb := range sc.App.Manifest.Capabilities {
                 for _, dependent := range registry.GetDependents(cpb) {

@@ -9,53 +9,24 @@ import (
 )
 
 
-type MsgQueryFail struct {
-    App *app.App
-    Id string
-    Message string
-}
+func (c *commandStrategy) msgQueryFail() (error) {
+    log.Printf("Sending message query fail from %s", mqf.App.Manifest.InstanceId)
+    var id, message string
 
-
-func NewMsgQueryFail(a *app.App, data []byte) (*Command, error) {
-    mqf := new(MsgQueryFail)
-    mqf.App = a
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
-    if err != nil {
-        return nil, err
-    }
-    m := parsed.(map[string]interface{})
-
-    if val, ok := getString(m, "id"); ok {
-        mqf.Id = val
-    } else {
+    if id, ok := getString(c.body, "id"); !ok {
         return nil, errors.New("No id found")
     }
-
-    if val, ok := getString(m, "message"); ok {
-        mqf.Message = val
-    } else {
+    if message, ok := getString(c.body, "message"); !ok {
         return nil, errors.New("No message found")
     }
 
-    ret := new(Command)
-    ret.Execute = mqf.Execute
-    return ret, nil
-}
-
-
-func (mqf *MsgQueryFail) Execute() {
-    log.Printf("Sending message query fail from %s", mqf.App.Manifest.InstanceId)
-
-    body := make(map[string]interface{})
-    body["fromInstanceId"] = mqf.App.Manifest.InstanceId
-    body["id"] = mqf.Id
-    body["message"] = mqf.Message
-    if recipient, ok := msg_archive.GetMsg(mqf.Id); ok {
+    body := make(jsonData)
+    body["fromInstanceId"] = c.app.Manifest.InstanceId
+    body["id"] = id
+    body["message"] = message
+    if recipient, ok := msg_archive.GetMsg(id); ok {
         recipient.Send("MSG_QUERY_FAIL", body)
     } else {
-        log.Printf("Warning: no app found to reply to for query id %s\n", mqf.Id)
+        log.Printf("Warning: unrecognized message id %s\n", id)
     }
 }

@@ -106,21 +106,21 @@ func ListenForCommands(a *app.App) {
     // loop forever consuming messages
     for {
         // get the next command
-        cmd, err := getCommand(a)
+        strategy, err := getCommand(a)
         if err != nil {
             log.Println("ERROR:", err)
             return
         }
 
-        // enqueue the command
-        dispatch.Enqueue(cmd)
+        // do the command
+        go strategy.Execute()
     }
 }
 
 
 // Gets the next command from the application.
 // Returns the command and an error, if one occured.
-func getCommand(a *app.App) (*cmd.Command, error) {
+func getCommand(a *app.App) (*cmd.Strategy, error) {
     // get the message length
     msgLen, err := getMsgLen(a)
     if err != nil {
@@ -140,11 +140,11 @@ func getCommand(a *app.App) (*cmd.Command, error) {
     }
 
     // we have the body, parse the command
-    cmd := cmd.ParseCommand(a, msgBuff)
+    command, err := cmd.ParseCommand(a, msgBuff)
     if err != nil {
         return nil, err
     }
-    return cmd, nil
+    return command, nil
 }
 
 
