@@ -5,32 +5,7 @@ import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
     "log"
     "errors"
-    "encoding/json"
 )
-
-
-func NewStatusChange(a *app.App, status int, data []byte) (*Command, error) {
-    sc := new(StatusChange)
-    sc.App = a
-    sc.NewStatus = status
-    sc.Priority = -1
-    if data != nil {
-        var parsed interface{}
-        err := json.Unmarshal(data, &parsed)
-        if err != nil {
-            return nil, err
-        }
-        m := parsed.(map[string]interface{})
-        if val, ok := getInt(m, "priority"); ok {
-            sc.Priority = val
-        } else {
-            return nil, errors.New("Priority was missing or not a number")
-        }
-    }
-    ret := new(Command)
-    ret.Execute = sc.Execute
-    return ret, nil
-}
 
 
 // change the app's status and notify all those that depend on this app
@@ -57,15 +32,16 @@ func (c *commandStrategy) statusChange() (error) {
             log.Printf("Changing status of %s to '%s'\n", c.app.Manifest.InstanceId, c.app.StatusString())
 
             // notify everyone who depends on us
-            for _, cpb := range sc.App.Manifest.Capabilities {
+            for _, cpb := range c.app.Manifest.Capabilities {
                 for _, dependent := range registry.GetDependents(cpb) {
                     body := make(map[string]interface{})
                     inner := make(map[string]string)
-                    inner[sc.App.Manifest.InstanceId] = sc.App.StatusString()
+                    inner[c.app.Manifest.InstanceId] = c.app.StatusString()
                     body[cpb.Name] = inner
                     dependent.Send("APP_DEPENDENCY", body)
                 }
             }
         }
     }
+    return nil
 }

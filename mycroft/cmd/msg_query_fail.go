@@ -1,23 +1,26 @@
 package cmd
 
 import (
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "errors"
     "log"
-    "encoding/json"
 )
 
 
 func (c *commandStrategy) msgQueryFail() (error) {
-    log.Printf("Sending message query fail from %s", mqf.App.Manifest.InstanceId)
+    log.Printf("Sending message query fail from %s", c.app.Manifest.InstanceId)
     var id, message string
 
-    if id, ok := getString(c.body, "id"); !ok {
-        return nil, errors.New("No id found")
+    if id_, ok := getString(c.body, "id"); ok {
+        id = id_
+    } else {
+        return errors.New("No id found")
     }
-    if message, ok := getString(c.body, "message"); !ok {
-        return nil, errors.New("No message found")
+
+    if message_, ok := getString(c.body, "message"); !ok {
+        message = message_
+    } else {
+        return errors.New("No message found")
     }
 
     body := make(jsonData)
@@ -29,4 +32,5 @@ func (c *commandStrategy) msgQueryFail() (error) {
     } else {
         log.Printf("Warning: unrecognized message id %s\n", id)
     }
+    return nil
 }

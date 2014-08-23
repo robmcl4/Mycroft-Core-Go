@@ -2,7 +2,6 @@ package cmd
 
 import (
     "log"
-    "encoding/json"
     "errors"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
@@ -24,8 +23,10 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
     ret := new(parsedMsgQuery)
 
     // get the id
-    if ret.id, ok := getString(c.body, "id"); !ok {
+    if id, ok := getString(c.body, "id"); ok {
         return nil, errors.New("ID not supplied")
+    } else {
+        ret.id = id
     }
 
     // get the capability, and find the matching app.Capability
@@ -45,7 +46,9 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
     }
 
     // get the action they want to perform
-    if ret.action, ok := getString(c.body, "action"); ok {
+    if action, ok := getString(c.body, "action"); ok {
+        ret.action = action
+    } else {
         return nil, errors.New("No action was given")
     }
 
@@ -71,7 +74,9 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
     }
 
     // get the message priority
-    if ret.priority, ok := getInt(c.body, "priority"); ok {
+    if priority, ok := getInt(c.body, "priority"); ok {
+        ret.priority = priority
+    } else {
         return nil, errors.New("Priority was not a valid integer")
     }
 
@@ -82,7 +87,7 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
 // send this message query to all targeted apps
 func (c *commandStrategy) msgQuery() (error) {
     log.Printf("Processing query from %s\n", c.app.Manifest.InstanceId)
-    mq, err := c.parseMsgQuery()
+    mq, err := parseMsgQuery(c)
     if err != nil {
         return err
     }
@@ -100,7 +105,7 @@ func (c *commandStrategy) msgQuery() (error) {
     // if this is an undirected query
     if len(mq.instanceIds) == 0 {
         // send to all providers of the capability
-        for _, provider := range registry.GetProviders(mq.Capability) {
+        for _, provider := range registry.GetProviders(mq.capability) {
             provider.Send("MSG_QUERY", body)
         }
     } else {
@@ -111,4 +116,5 @@ func (c *commandStrategy) msgQuery() (error) {
             }
         }
     }
+    return nil
 }

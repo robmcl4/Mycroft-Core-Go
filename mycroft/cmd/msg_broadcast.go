@@ -9,22 +9,25 @@ import (
 
 func (c *commandStrategy) msgBroadcast() (error) {
     var id string
-    content := body["content"]
+    content := c.body["content"]
 
     log.Printf("Sending message broadcast from %s\n", c.app.Manifest.InstanceId)
 
-    if id, ok := getString(m, "id"); !ok {
+    if id_, ok := getString(c.body, "id"); ok {
+        id = id_
+    } else {
         return errors.New("No id found")
     }
 
     msg_archive.RecordMsg(c.app, id)
     toSend := make(jsonData)
-    toSend["fromInstanceId"] = a.Manifest.InstanceId
+    toSend["fromInstanceId"] = c.app.Manifest.InstanceId
     toSend["id"] = id
     toSend["content"] = content
-    for _, cpb := range capp.Manifest.Capabilities {
+    for _, cpb := range c.app.Manifest.Capabilities {
         for _, dep := range registry.GetDependents(cpb) {
             dep.Send("MSG_BROADCAST", toSend)
         }
     }
+    return nil
 }

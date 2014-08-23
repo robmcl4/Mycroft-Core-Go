@@ -112,13 +112,18 @@ func ListenForCommands(a *app.App) {
         }
 
         // do the command
-        if stragegy.GetVerb() == "APP_MANIFEST" {
-            if err = strategy.Execute(); err != nil {
+        if strategy.GetVerb() == "APP_MANIFEST" {
+            if strategy.Execute() {
                 log.Println("ERROR:", err)
                 return
             }
         } else {
-            go strategy.Execute()
+            // HACK to get around golang compiler error
+            // originally:
+            //   go strategy.Execute()
+            // message:
+            //   "go requires function call not conversion"
+            go performStrategy(strategy)
         }
     }
 }
@@ -126,7 +131,7 @@ func ListenForCommands(a *app.App) {
 
 // Gets the next command from the application.
 // Returns the command and an error, if one occured.
-func getCommand(a *app.App) (*cmd.Strategy, error) {
+func getCommand(a *app.App) (cmd.CommandStrategy, error) {
     // get the message length
     msgLen, err := getMsgLen(a)
     if err != nil {
@@ -146,9 +151,9 @@ func getCommand(a *app.App) (*cmd.Strategy, error) {
     }
 
     // we have the body, parse the command
-    command, err := cmd.ParseCommand(a, msgBuff)
-    if err != nil {
-        return nil, err
+    command, ok := cmd.ParseCommand(a, string(msgBuff))
+    if !ok {
+        return nil, errors.New("Command did not parse correctly")
     }
     return command, nil
 }
@@ -196,12 +201,15 @@ func closeApp(a *app.App) {
     // this really should be somewhere else in the code, but i can't figure out where
     // since most places would lead to circular references
     a.Connection.Close()
-    sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
     if a.Manifest != nil {
         registry.Remove(a)
-        dispatch.Enqueue(sc)
         log.Printf("Closing application %s", a.Manifest.InstanceId)
     } else {
         log.Printf("Closing application")
     }
+}
+
+// HACK to get around go compiler error
+func performStrategy(s cmd.CommandStrategy) {
+    s.Execute()
 }

@@ -3,6 +3,7 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "encoding/json"
+    "fmt"
 )
 
 
@@ -51,11 +52,11 @@ func (c *commandStrategy) Execute() (bool) {
     case "MSG_QUERY_FAIL":
         err = c.msgQueryFail()
     default:
-        err = fmt.Error("No matching verb found for %s", verb)
+        err = fmt.Errorf("No matching verb found for %s", c.verb)
     }
 
     if err != nil {
-        b, _ := json.Marshall(c.body)
+        b, _ := json.Marshal(c.body)
         return newFailedCommandStrategy(c.app, string(b), err.Error()).Execute()
     }
     return ret
@@ -69,16 +70,17 @@ func (c *commandStrategy) GetVerb() string {
 // -------- Failed command executor -------------
 
 type failedCommandStrategy struct {
-    received, message string
+    received string
+    message string
     app *app.App
 }
 
 
 func newFailedCommandStrategy(a *app.App, received string, message string) (CommandStrategy) {
-    ret := new(failedCommandExecutor)
+    ret := new(failedCommandStrategy)
     ret.received = received
     ret.message = message
-    ret.app = app
+    ret.app = a
     return ret
 }
 
@@ -89,6 +91,6 @@ func (c *failedCommandStrategy) Execute() (bool) {
 }
 
 
-func (c *failedCommandStrategy) GetVerb() {
+func (c *failedCommandStrategy) GetVerb() string {
     return "MSG_GENERAL_FAILURE"
 }
