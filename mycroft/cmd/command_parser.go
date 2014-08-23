@@ -4,8 +4,6 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "strings"
-    "errors"
-    "fmt"
     "log"
     "encoding/json"
 )
@@ -16,7 +14,7 @@ type jsonData map[string]interface{}
 
 // Parses a command given the command's message string
 // (verb and body, no message length)
-func ParseCommand(a *app.App, message string) (*Strategy, bool) {
+func ParseCommand(a *app.App, message string) (CommandStrategy, bool) {
     ret, err := internalParseCommand(a, message)
     if err != nil {
         log.Printf("General failure: %s\n", err.Error())
@@ -26,22 +24,23 @@ func ParseCommand(a *app.App, message string) (*Strategy, bool) {
 }
 
 
-func internalParseCommand(a *app.App, message string) (*Strategy, error) {
+func internalParseCommand(a *app.App, message string) (CommandStrategy, error) {
     verb, body, err := parseVerbAndBody(message)
     if err != nil {
         return nil, err
     }
 
-    return newCommandStrategy(app, verb, body)
+    return newCommandStrategy(a, verb, body), nil
 }
 
 
 // Parses the command message into the verb and body. The body may be nil.
 func parseVerbAndBody(message string) (verb string, body jsonData, err error) {
     verb, maybeBody := separateVerb(message)
-    if maybeBody != nil {
+    if maybeBody != "" {
         body, err = parseBody(maybeBody)
     }
+    return
 }
 
 
@@ -52,22 +51,23 @@ func separateVerb(message string) (verb string, body string) {
     if len(split) == 2 {
         body = split[1]
     }
+    return
 }
 
 
 // Parses the message body to a JSON map
 func parseBody(body string) (jsonData, error) {
     var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
+    err := json.Unmarshal([]byte(body), &parsed)
     if err != nil {
         return nil, err
     }
-    return parsed.(JSON), nil
+    return parsed.(jsonData), nil
 }
 
 
 // get a string from the given map
-func getString(m map[string]interface{}, key string) (string, bool) {
+func getString(m jsonData, key string) (string, bool) {
     if val, ok := m[key]; ok {
         switch vv := val.(type) {
         case string:

@@ -1,5 +1,4 @@
-spackage cmd
-
+package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"

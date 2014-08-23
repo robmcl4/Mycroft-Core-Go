@@ -13,7 +13,6 @@ import (
     "io/ioutil"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/cmd"
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
 )
 
@@ -113,7 +112,14 @@ func ListenForCommands(a *app.App) {
         }
 
         // do the command
-        go strategy.Execute()
+        if stragegy.GetVerb() == "APP_MANIFEST" {
+            if err = strategy.Execute(); err != nil {
+                log.Println("ERROR:", err)
+                return
+            }
+        } else {
+            go strategy.Execute()
+        }
     }
 }
 

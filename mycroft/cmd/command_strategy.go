@@ -7,8 +7,8 @@ import (
 
 
 type CommandStrategy interface {
-    GetVerb func() (string)
-    Execute func() (bool)
+    GetVerb () string
+    Execute () bool
 }
 
 // -------- Sandard command executor -------------
@@ -20,12 +20,12 @@ type commandStrategy struct {
 }
 
 
-func newCommandStrategy(a *app.App, verb string, body jsonData) (*CommandStrategy) {
+func newCommandStrategy(a *app.App, verb string, body jsonData) (CommandStrategy) {
     if body == nil {
         body = make(jsonData)
     }
 
-    ret := new(commandExecutor)
+    ret := new(commandStrategy)
     ret.verb = verb
     ret.body = body
     ret.app = a
@@ -56,17 +56,13 @@ func (c *commandStrategy) Execute() (bool) {
 
     if err != nil {
         b, _ := json.Marshall(c.body)
-        return newFailedCommandStrategy(
-            c.app,
-            string(b),
-            err.Error()
-        ).Execute()
+        return newFailedCommandStrategy(c.app, string(b), err.Error()).Execute()
     }
     return ret
 }
 
 
-func (c *commandStrategy) GetVerb() {
+func (c *commandStrategy) GetVerb() string {
     return c.verb
 }
 
@@ -78,7 +74,7 @@ type failedCommandStrategy struct {
 }
 
 
-func newFailedCommandStrategy(a *app.App, received string, message string) (*CommandStrategy) {
+func newFailedCommandStrategy(a *app.App, received string, message string) (CommandStrategy) {
     ret := new(failedCommandExecutor)
     ret.received = received
     ret.message = message
@@ -87,12 +83,12 @@ func newFailedCommandStrategy(a *app.App, received string, message string) (*Com
 }
 
 
-func (c *failedCommandExecutor) Execute() (bool) {
+func (c *failedCommandStrategy) Execute() (bool) {
     c.generalFailure()
     return false
 }
 
 
-func (c *failedCommandExecutor) GetVerb() {
+func (c *failedCommandStrategy) GetVerb() {
     return "MSG_GENERAL_FAILURE"
 }

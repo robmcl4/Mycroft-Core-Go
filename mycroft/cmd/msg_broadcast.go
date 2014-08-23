@@ -1,7 +1,6 @@
 package cmd
 
 import (
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
     "log"
