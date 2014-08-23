@@ -202,6 +202,7 @@ func closeApp(a *app.App) {
     // since most places would lead to circular references
     a.Connection.Close()
     if a.Manifest != nil {
+        cmd.ChangeAppStatus(a, app.STATUS_DOWN, 0)
         registry.Remove(a)
         log.Printf("Closing application %s", a.Manifest.InstanceId)
     } else {
