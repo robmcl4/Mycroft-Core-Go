@@ -69,7 +69,7 @@ func decodeManifest(m jsonData) (man *app.Manifest, err error) {
         return
     }
 
-    if val, ok := getString(m, "name"); ok && len(val) != 0 {
+    if val, ok := getString(m, "displayName"); ok && len(val) != 0 {
         man.DisplayName = val
     } else {
         err = errors.New("No displayName was found")
