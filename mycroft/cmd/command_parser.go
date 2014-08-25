@@ -62,7 +62,7 @@ func parseBody(body string) (jsonData, error) {
     if err != nil {
         return nil, err
     }
-    return parsed.(jsonData), nil
+    return jsonData(parsed.(map[string]interface{})), nil
 }
 
 
