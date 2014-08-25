@@ -4,6 +4,7 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "strings"
+    "errors"
     "log"
     "encoding/json"
 )
@@ -40,6 +41,9 @@ func parseVerbAndBody(message string) (verb string, body jsonData, err error) {
     if maybeBody != "" {
         body, err = parseBody(maybeBody)
     }
+    if verb == "" {
+        err = errors.New("No verb supplied")
+    }
     return
 }
 
@@ -62,7 +66,12 @@ func parseBody(body string) (jsonData, error) {
     if err != nil {
         return nil, err
     }
-    return jsonData(parsed.(map[string]interface{})), nil
+    switch parsed.(type) {
+    case map[string]interface{}:
+        return jsonData(parsed.(map[string]interface{})), nil
+    default:
+        return nil, errors.New("Body of unrecognized data type")
+    }
 }
 
 
@@ -97,11 +106,11 @@ func getInt(m map[string]interface{}, key string) (int, bool) {
 
 
 // get a map from the given map
-func getMap(m map[string]interface{}, key string) (map[string]interface{}, bool) {
+func getMap(m jsonData, key string) (jsonData, bool) {
     if val, ok := m[key]; ok {
         switch vv := val.(type) {
         case map[string]interface{}:
-            return vv, true
+            return jsonData(vv), true
         default:
             return nil, false
         }
