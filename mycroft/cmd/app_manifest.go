@@ -12,6 +12,9 @@ import (
 
 // construct the app based on its manifest
 func (c *commandStrategy) appManifest() (bool) {
+    c.app.RWMutex.Lock()
+    defer c.app.RWMutex.Unlock()
+
     log.Println("Parsing application's manifest")
 
     man, err := decodeManifest(c.body)

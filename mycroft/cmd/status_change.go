@@ -34,6 +34,7 @@ func (c *commandStrategy) statusChange() (error) {
     }
 
     if c.app.Status != newStatus {
+        c.app.RWMutex.Lock()
         c.app.Status = newStatus
         c.app.Priority = priority
 
@@ -41,6 +42,8 @@ func (c *commandStrategy) statusChange() (error) {
             log.Printf("Changing status of %s to '%s'\n", c.app.Manifest.InstanceId, c.app.StatusString())
             sendDependencyNotice(c.app)
         }
+        c.app.RWMutex.Unlock()
+
     }
     return nil
 }

@@ -8,6 +8,9 @@ import (
 )
 
 func (c *commandStrategy) msgBroadcast() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
+
     var id string
     content := c.body["content"]
 

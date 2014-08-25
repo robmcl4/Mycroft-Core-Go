@@ -8,6 +8,9 @@ import (
 
 
 func (c *commandStrategy) msgQueryFail() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
+
     log.Printf("Sending message query fail from %s", c.app.Manifest.InstanceId)
     var id, message string
 

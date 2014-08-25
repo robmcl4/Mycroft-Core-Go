@@ -86,6 +86,9 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
 
 // send this message query to all targeted apps
 func (c *commandStrategy) msgQuery() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
+
     log.Printf("Processing query from %s\n", c.app.Manifest.InstanceId)
     mq, err := parseMsgQuery(c)
     if err != nil {
