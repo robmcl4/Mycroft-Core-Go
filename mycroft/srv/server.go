@@ -3,7 +3,6 @@ package srv
 
 import (
     "net"
-    "log"
     "fmt"
     "strings"
     "strconv"
@@ -14,6 +13,7 @@ import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/cmd"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
 )
 
 
@@ -68,13 +68,13 @@ func StartListen(port int, useTls bool, crtPath string, keyPath string, sname st
     // at the end of this function close the server connection
     defer l.Close()
 
-    log.Println("Starting listen loop")
+    logging.Debug("Starting listen loop")
     for {
         a, err := acceptApp(l)
         if err != nil {
             return err
         } else {
-            log.Println("Got connection")
+            logging.Debug("Got connection")
             go ListenForCommands(a)
         }
     }
@@ -107,14 +107,20 @@ func ListenForCommands(a *app.App) {
         // get the next command
         strategy, err := getCommand(a)
         if err != nil {
-            log.Println("ERROR:", err)
+            id := "NO_ID_FOUND"
+            if a.Manifest != nil {
+                id = a.Manifest.InstanceId
+            }
+            logging.Error("Application %s encountered fatal error: %s",
+                          id,
+                          err.Error())
             return
         }
 
         // do the command
         if strategy.GetVerb() == "APP_MANIFEST" {
             if !strategy.Execute() {
-                log.Println("Manifest did not parse")
+                logging.Error("Application's manifest did not parse correctly")
                 return
             }
         } else {
@@ -204,9 +210,9 @@ func closeApp(a *app.App) {
     if a.Manifest != nil {
         cmd.ChangeAppStatus(a, app.STATUS_DOWN, 0)
         registry.Remove(a)
-        log.Printf("Closing application %s", a.Manifest.InstanceId)
+        logging.Info("Closing application %s", a.Manifest.InstanceId)
     } else {
-        log.Printf("Closing application")
+        logging.Info("Closing application")
     }
 }
 

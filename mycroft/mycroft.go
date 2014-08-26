@@ -20,16 +20,17 @@ func main() {
     flag.Parse()
 
     logging.Info("Starting Server ...")
+
     if *no_tls {
         logging.Warning("not using TLS")
         err := srv.StartListen(1847, false, "", "", "")
         if err != nil {
-            logging.Fatal(err)
+            logging.Fatal("Could not start server: %s", err.Error())
         }
     } else {
         err := srv.StartListen(1847, true, *crt_path, *key_path, *sname)
         if err != nil {
-            logging.Fatal(err)
+            logging.Fatal("Could not start server: %s", err.Error())
         }
     }
 }
