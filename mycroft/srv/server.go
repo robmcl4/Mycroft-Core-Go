@@ -113,7 +113,7 @@ func ListenForCommands(a *app.App) {
 
         // do the command
         if strategy.GetVerb() == "APP_MANIFEST" {
-            if strategy.Execute() {
+            if !strategy.Execute() {
                 log.Println("Manifest did not parse")
                 return
             }
