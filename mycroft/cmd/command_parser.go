@@ -16,12 +16,14 @@ type jsonData map[string]interface{}
 // Parses a command given the command's message string
 // (verb and body, no message length)
 func ParseCommand(a *app.App, message string) (CommandStrategy, bool) {
+    id := "NO_ID_FOUND"
+    if a.Manifest != nil {
+        id = a.Manifest.InstanceId
+    }
+    logging.Debug("Parsing from app %s: \n%s", id, message)
+
     ret, err := internalParseCommand(a, message)
     if err != nil {
-        id := "NO_ID_FOUND"
-        if a.Manifest != nil {
-            id = a.Manifest.InstanceId
-        }
         logging.Error("Parse failed from app %s: %s", id, err.Error())
         return newFailedCommandStrategy(a, message, err.Error()), false
     }

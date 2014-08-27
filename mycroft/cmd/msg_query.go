@@ -24,9 +24,9 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
 
     // get the id
     if id, ok := getString(c.body, "id"); ok {
-        return nil, errors.New("ID not supplied")
-    } else {
         ret.id = id
+    } else {
+        return nil, errors.New("ID not supplied")
     }
 
     // get the capability, and find the matching app.Capability
@@ -38,7 +38,7 @@ func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
                 break
             }
         }
-        if ret.capability != nil {
+        if ret.capability == nil {
             return nil, errors.New("This capability was not listed as a dependency")
         }
     } else {
