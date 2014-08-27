@@ -1,32 +1,11 @@
 package cmd
 
+func (f *failedCommandStrategy) generalFailure() {
+    f.app.RWMutex.RLock()
+    defer f.app.RWMutex.RUnlock()
 
-import (
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
-)
-
-
-type GeneralFailure struct {
-    App *app.App
-    Recieved string
-    Message string
-}
-
-
-func NewGeneralFailure(a *app.App, recieved string, message string) (*Command) {
-    gf := new(GeneralFailure)
-    gf.App = a
-    gf.Recieved = recieved
-    gf.Message = message
-    ret := new(Command)
-    ret.Execute = gf.Execute
-    return ret
-}
-
-
-func (gf *GeneralFailure) Execute() {
-    body := make(map[string]interface{})
-    body["recieved"] = gf.Recieved
-    body["message"] = gf.Message
-    gf.App.Send("MSG_GENERAL_FAILURE", body)
+    body := make(jsonData)
+    body["recieved"] = f.received
+    body["message"] = f.message
+    f.app.Send("MSG_GENERAL_FAILURE", body)
 }

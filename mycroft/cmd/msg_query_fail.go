@@ -1,61 +1,41 @@
 package cmd
 
 import (
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
-    "log"
-    "encoding/json"
 )
 
 
-type MsgQueryFail struct {
-    App *app.App
-    Id string
-    Message string
-}
+func (c *commandStrategy) msgQueryFail() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
 
+    logging.Debug("Sending message query fail from %s", c.app.Manifest.InstanceId)
+    var id, message string
 
-func NewMsgQueryFail(a *app.App, data []byte) (*Command, error) {
-    mqf := new(MsgQueryFail)
-    mqf.App = a
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
-    if err != nil {
-        return nil, err
-    }
-    m := parsed.(map[string]interface{})
-
-    if val, ok := getString(m, "id"); ok {
-        mqf.Id = val
+    if id_, ok := getString(c.body, "id"); ok {
+        id = id_
     } else {
-        return nil, errors.New("No id found")
+        return errors.New("No id found")
     }
 
-    if val, ok := getString(m, "message"); ok {
-        mqf.Message = val
+    if message_, ok := getString(c.body, "message"); !ok {
+        message = message_
     } else {
-        return nil, errors.New("No message found")
+        return errors.New("No message found")
     }
 
-    ret := new(Command)
-    ret.Execute = mqf.Execute
-    return ret, nil
-}
-
-
-func (mqf *MsgQueryFail) Execute() {
-    log.Printf("Sending message query fail from %s", mqf.App.Manifest.InstanceId)
-
-    body := make(map[string]interface{})
-    body["fromInstanceId"] = mqf.App.Manifest.InstanceId
-    body["id"] = mqf.Id
-    body["message"] = mqf.Message
-    if recipient, ok := msg_archive.GetMsg(mqf.Id); ok {
+    body := make(jsonData)
+    body["fromInstanceId"] = c.app.Manifest.InstanceId
+    body["id"] = id
+    body["message"] = message
+    if recipient, ok := msg_archive.GetMsg(id); ok {
         recipient.Send("MSG_QUERY_FAIL", body)
     } else {
-        log.Printf("Warning: no app found to reply to for query id %s\n", mqf.Id)
+        logging.Warning("unrecognized message query id %s from app %s",
+                        id,
+                        c.app.Manifest.InstanceId)
     }
+    return nil
 }

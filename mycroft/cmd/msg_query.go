@@ -1,76 +1,69 @@
 package cmd
 
 import (
-    "log"
-    "encoding/json"
     "errors"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
 )
 
 
-type MsgQuery struct {
-    App *app.App
-    Id string
-    Capability *app.Capability
-    Action string
-    Data interface{}
-    InstanceIds []string
-    Priority int
+type parsedMsgQuery struct {
+    id string
+    capability *app.Capability
+    action string
+    data interface{}
+    instanceIds []string
+    priority int
 }
 
 
-func NewMsgQuery(a *app.App, data []byte) (*Command, error) {
-    mq := new(MsgQuery)
-    mq.App = a
+func parseMsgQuery(c *commandStrategy) (*parsedMsgQuery, error) {
+    ret := new(parsedMsgQuery)
 
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
-    if err != nil {
-        return nil, err
-    }
-    m := parsed.(map[string]interface{})
-
-    if val, ok := getString(m, "id"); ok {
-        mq.Id = val
+    // get the id
+    if id, ok := getString(c.body, "id"); ok {
+        ret.id = id
     } else {
         return nil, errors.New("ID not supplied")
     }
 
-    if val, ok := getString(m, "capability"); ok {
-        found := false
-        for _, dep := range a.Manifest.Dependencies {
+    // get the capability, and find the matching app.Capability
+    // in the manifest (so we know what version they want)
+    if val, ok := getString(c.body, "capability"); ok {
+        for _, dep := range c.app.Manifest.Dependencies {
             if dep.Name == val {
-                found = true
-                mq.Capability = dep
+                ret.capability = dep
                 break
             }
         }
-        if !found {
+        if ret.capability == nil {
             return nil, errors.New("This capability was not listed as a dependency")
         }
     } else {
         return nil, errors.New("No capability was given")
     }
 
-    if val, ok := getString(m, "action"); ok {
-        mq.Action = val
+    // get the action they want to perform
+    if action, ok := getString(c.body, "action"); ok {
+        ret.action = action
     } else {
         return nil, errors.New("No action was given")
     }
 
-    mq.Data = m["data"]
+    // get data; can be anything, just grab whatever's there
+    ret.data = c.body["data"]
 
-    mq.InstanceIds = make([]string, 0)
-    if val, ok := m["instanceId"]; ok {
+    // get the instance IDs and do a whole bunch of type-checking
+    ret.instanceIds = make([]string, 0)
+    if val, ok := c.body["instanceId"]; ok {
         switch vv := val.(type) {
         case []interface{}:
             for _, inst := range vv {
                 switch vinst := inst.(type) {
                 case string:
-                    mq.InstanceIds = append(mq.InstanceIds, vinst)
+                    ret.instanceIds = append(ret.instanceIds, vinst)
                 default:
                     return nil, errors.New("InstanceId not a string")
                 }
@@ -80,45 +73,51 @@ func NewMsgQuery(a *app.App, data []byte) (*Command, error) {
         }
     }
 
-    if val, ok := getInt(m, "priority"); ok {
-        mq.Priority = val
+    // get the message priority
+    if priority, ok := getInt(c.body, "priority"); ok {
+        ret.priority = priority
     } else {
         return nil, errors.New("Priority was not a valid integer")
     }
 
-    ret := new(Command)
-    ret.Execute = mq.Execute
     return ret, nil
 }
 
 
 // send this message query to all targeted apps
-func (mq *MsgQuery) Execute() {
-    if mq.App.Manifest != nil {
-        log.Printf("Processing query from %s\n", mq.App.Manifest.InstanceId)
+func (c *commandStrategy) msgQuery() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
+
+    logging.Debug("Processing query from %s", c.app.Manifest.InstanceId)
+    mq, err := parseMsgQuery(c)
+    if err != nil {
+        return err
     }
-    msg_archive.RecordMsg(mq.App, mq.Id)
-    body := make(map[string]interface{})
-    body["fromInstanceId"] = mq.App.Manifest.InstanceId
-    body["id"] = mq.Id
-    body["priority"] = mq.Priority
-    body["data"] = mq.Data
-    body["instanceIds"] = mq.InstanceIds
-    body["action"] = mq.Action
-    body["capability"] = mq.Capability.Name
+
+    msg_archive.RecordMsg(c.app, mq.id)
+    body := make(jsonData)
+    body["fromInstanceId"] = c.app.Manifest.InstanceId
+    body["id"] = mq.id
+    body["priority"] = mq.priority
+    body["data"] = mq.data
+    body["instanceId"] = mq.instanceIds
+    body["action"] = mq.action
+    body["capability"] = mq.capability.Name
 
     // if this is an undirected query
-    if len(mq.InstanceIds) == 0 {
+    if len(mq.instanceIds) == 0 {
         // send to all providers of the capability
-        for _, provider := range registry.GetProviders(mq.Capability) {
+        for _, provider := range registry.GetProviders(mq.capability) {
             provider.Send("MSG_QUERY", body)
         }
     } else {
         // this is a directed query, send to all given instance ids
-        for _, instName := range mq.InstanceIds {
+        for _, instName := range mq.instanceIds {
             if inst, ok := registry.GetInstance(instName); ok {
                 inst.Send("MSG_QUERY", body)
             }
         }
     }
+    return nil
 }

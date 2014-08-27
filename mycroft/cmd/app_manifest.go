@@ -1,51 +1,39 @@
 package cmd
 
-
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "github.com/coreos/go-semver/semver"
     "github.com/nu7hatch/gouuid"
     "errors"
-    "log"
     "fmt"
-    "encoding/json"
 )
 
-type AppManifest struct {
-    App *app.App
-    data []byte
-}
-
-
-func NewAppManifest(a *app.App, data []byte) (*Command, error) {
-    am := new(AppManifest)
-    am.App = a
-    am.data = data
-    ret := new(Command)
-    ret.Execute = am.Execute
-    return ret, nil
-}
-
-
 // construct the app based on its manifest
-func (a *AppManifest) Execute() {
-    log.Println("Parsing application's manifest")
-    man, err := decodeManifest(a.data)
+func (c *commandStrategy) appManifest() (bool) {
+    c.app.RWMutex.Lock()
+    defer c.app.RWMutex.Unlock()
+
+    logging.Debug("Parsing application's manifest")
+
+    man, err := decodeManifest(c.body)
     if err != nil {
-        log.Printf("ERROR: app's manifest is invalid: %s", err)
-        go sendManifestFail(a.App, err.Error())
-        return
+        logging.Error("App's manifest is invalid: %s", err)
+        sendManifestFail(c.app, err.Error())
+        return false
     }
     if _, exists := registry.GetInstance(man.InstanceId); exists {
-        log.Printf("ERROR: app's instance id is already taken: %s", man.InstanceId)
-        go sendManifestFail(a.App, fmt.Sprintf("instanceId %s is in use", man.InstanceId))
-        return
+        logging.Error("App's instance id is already taken: %s", man.InstanceId)
+        sendManifestFail(c.app, fmt.Sprintf("instanceId %s is in use", man.InstanceId))
+        return false
     }
-    a.App.Status = app.STATUS_DOWN
-    a.App.Manifest = man
-    registry.Register(a.App)
-    sendManifestOkAndDependencies(a.App)
+    c.app.Status = app.STATUS_DOWN
+    c.app.Manifest = man
+    registry.Register(c.app)
+    sendManifestOkAndDependencies(c.app)
+    logging.Info("App '%s' now connected with manifest parsed", c.app.Manifest.InstanceId)
+    return true
 }
 
 
@@ -74,16 +62,8 @@ func sendManifestOkAndDependencies(a *app.App) {
 }
 
 
-func decodeManifest(data []byte) (man *app.Manifest, err error) {
+func decodeManifest(m jsonData) (man *app.Manifest, err error) {
     man = new(app.Manifest)
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err = json.Unmarshal(data, &parsed)
-    if err != nil {
-        return
-    }
-    m := parsed.(map[string]interface{})
 
     // start loading in values from the manifest
     if str, ok := getString(m, "name"); ok && len(str) != 0 {
@@ -93,7 +73,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
         return
     }
 
-    if val, ok := getString(m, "name"); ok && len(val) != 0 {
+    if val, ok := getString(m, "displayName"); ok && len(val) != 0 {
         man.DisplayName = val
     } else {
         err = errors.New("No displayName was found")
@@ -163,7 +143,7 @@ func decodeManifest(data []byte) (man *app.Manifest, err error) {
 }
 
 
-func parseCapabilityMap(m map[string]interface{}) ([]*app.Capability, error) {
+func parseCapabilityMap(m jsonData) ([]*app.Capability, error) {
     ret := make([]*app.Capability, 0)
     for k, v := range m {
         switch vv := v.(type) {

@@ -3,7 +3,6 @@ package srv
 
 import (
     "net"
-    "log"
     "fmt"
     "strings"
     "strconv"
@@ -13,8 +12,8 @@ import (
     "io/ioutil"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/cmd"
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/dispatch"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
 )
 
 
@@ -69,13 +68,13 @@ func StartListen(port int, useTls bool, crtPath string, keyPath string, sname st
     // at the end of this function close the server connection
     defer l.Close()
 
-    log.Println("Starting listen loop")
+    logging.Debug("Starting listen loop")
     for {
         a, err := acceptApp(l)
         if err != nil {
             return err
         } else {
-            log.Println("Got connection")
+            logging.Debug("Got connection")
             go ListenForCommands(a)
         }
     }
@@ -106,21 +105,39 @@ func ListenForCommands(a *app.App) {
     // loop forever consuming messages
     for {
         // get the next command
-        cmd, err := getCommand(a)
+        strategy, err := getCommand(a)
         if err != nil {
-            log.Println("ERROR:", err)
+            id := "NO_ID_FOUND"
+            if a.Manifest != nil {
+                id = a.Manifest.InstanceId
+            }
+            logging.Error("Application %s encountered fatal error: %s",
+                          id,
+                          err.Error())
             return
         }
 
-        // enqueue the command
-        dispatch.Enqueue(cmd)
+        // do the command
+        if strategy.GetVerb() == "APP_MANIFEST" {
+            if !strategy.Execute() {
+                logging.Error("Application's manifest did not parse correctly")
+                return
+            }
+        } else {
+            // HACK to get around golang compiler error
+            // originally:
+            //   go strategy.Execute()
+            // message:
+            //   "go requires function call not conversion"
+            go performStrategy(strategy)
+        }
     }
 }
 
 
 // Gets the next command from the application.
 // Returns the command and an error, if one occured.
-func getCommand(a *app.App) (*cmd.Command, error) {
+func getCommand(a *app.App) (cmd.CommandStrategy, error) {
     // get the message length
     msgLen, err := getMsgLen(a)
     if err != nil {
@@ -140,11 +157,11 @@ func getCommand(a *app.App) (*cmd.Command, error) {
     }
 
     // we have the body, parse the command
-    cmd := cmd.ParseCommand(a, msgBuff)
-    if err != nil {
-        return nil, err
+    command, ok := cmd.ParseCommand(a, string(msgBuff))
+    if !ok {
+        return nil, errors.New("Command did not parse correctly")
     }
-    return cmd, nil
+    return command, nil
 }
 
 
@@ -190,12 +207,16 @@ func closeApp(a *app.App) {
     // this really should be somewhere else in the code, but i can't figure out where
     // since most places would lead to circular references
     a.Connection.Close()
-    sc, _ := cmd.NewStatusChange(a, app.STATUS_DOWN, nil)
     if a.Manifest != nil {
+        cmd.ChangeAppStatus(a, app.STATUS_DOWN, 0)
         registry.Remove(a)
-        dispatch.Enqueue(sc)
-        log.Printf("Closing application %s", a.Manifest.InstanceId)
+        logging.Info("Closing application %s", a.Manifest.InstanceId)
     } else {
-        log.Printf("Closing application")
+        logging.Info("Closing application")
     }
+}
+
+// HACK to get around go compiler error
+func performStrategy(s cmd.CommandStrategy) {
+    s.Execute()
 }

@@ -1,56 +1,37 @@
 package cmd
 
 import (
-    "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
-    "log"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
-    "encoding/json"
 )
 
 
-type MsgQuerySuccess struct {
-    App *app.App
-    Id string
-    Ret interface{}
-}
+func (c *commandStrategy) msgQuerySuccess() (error) {
+    c.app.RWMutex.RLock()
+    defer c.app.RWMutex.RUnlock()
 
+    logging.Debug("Replying to message from app %s", c.app.Manifest.InstanceId)
 
-func NewMsgQuerySuccess(a *app.App, data []byte) (*Command, error) {
-    mqs := new(MsgQuerySuccess)
-    mqs.App = a
-
-    // Parse the JSON from the manifest
-    var parsed interface{}
-    err := json.Unmarshal(data, &parsed)
-    if err != nil {
-        return nil, err
-    }
-    m := parsed.(map[string]interface{})
-
-    if val, ok := getString(m, "id"); ok {
-        mqs.Id = val
+    var id string
+    if id_, ok := getString(c.body, "id"); ok {
+        id = id_
     } else {
-        return nil, errors.New("No id found")
+        return errors.New("No id found")
     }
 
-    mqs.Ret = m["ret"]
+    ret := c.body["ret"]
 
-    ret := new(Command)
-    ret.Execute = mqs.Execute
-    return ret, nil
-}
-
-
-func (mqs *MsgQuerySuccess) Execute() {
-    log.Printf("Replying to message from app %s\n", mqs.App.Manifest.InstanceId)
-    body := make(map[string]interface{})
-    body["fromInstanceId"] = mqs.App.Manifest.InstanceId
-    body["id"] = mqs.Id
-    body["ret"] = mqs.Ret
-    if recipient, ok := msg_archive.GetMsg(mqs.Id); ok {
+    body := make(jsonData)
+    body["fromInstanceId"] = c.app.Manifest.InstanceId
+    body["id"] = id
+    body["ret"] = ret
+    if recipient, ok := msg_archive.GetMsg(id); ok {
         recipient.Send("MSG_QUERY_SUCCESS", body)
     } else {
-        log.Printf("Warning: no app found to reply to for query id %s\n", mqs.Id)
+        logging.Warning("unrecognized message query id %s from app %s",
+                        id,
+                        c.app.Manifest.InstanceId)
     }
+    return nil
 }

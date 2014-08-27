@@ -5,8 +5,9 @@ import (
     "net"
     "encoding/json"
     "fmt"
-    "log"
     "github.com/coreos/go-semver/semver"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
+    "sync"
 )
 
 
@@ -41,6 +42,7 @@ type App struct {
     Manifest *Manifest
     Status int
     Priority int
+    RWMutex sync.RWMutex
 }
 
 
@@ -52,11 +54,11 @@ func NewApp() (*App) {
 
 
 func (a *App) Send(verb string, body map[string]interface{}) (error) {
-    id := ""
+    id := "NO_ID_FOUND"
     if a.Manifest != nil {
         id = a.Manifest.InstanceId
     }
-    log.Printf("Sending message %s to instance %s\n", verb, id)
+    logging.Debug("Sending message %s to instance %s", verb, id)
     verb += " "
     bodyBytes, err := json.Marshal(body)
     if err != nil {
@@ -65,8 +67,8 @@ func (a *App) Send(verb string, body map[string]interface{}) (error) {
     toSend := append([]byte(verb), bodyBytes...)
     length := fmt.Sprintf("%d\n", len(toSend))
     toSend = append([]byte(length), toSend...)
-    go a.Connection.Write(toSend)
-    return nil
+    _, err = a.Connection.Write(toSend)
+    return err
 }
 
 
