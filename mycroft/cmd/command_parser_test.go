@@ -108,7 +108,7 @@ func TestInternalParseCommand(t *testing.T) {
 func TestParseCommand(t *testing.T) {
     var strat CommandStrategy
     var status bool
-    var fakeApp *app.App
+    fakeApp := &app.App{}
 
     strat, status = ParseCommand(fakeApp, "FOO {\"bar\":\"baz\"}")
     assert.True(t, status)
