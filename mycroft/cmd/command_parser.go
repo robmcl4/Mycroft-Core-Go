@@ -3,9 +3,9 @@ package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "strings"
     "errors"
-    "log"
     "encoding/json"
 )
 
@@ -18,7 +18,11 @@ type jsonData map[string]interface{}
 func ParseCommand(a *app.App, message string) (CommandStrategy, bool) {
     ret, err := internalParseCommand(a, message)
     if err != nil {
-        log.Printf("General failure: %s\n", err.Error())
+        id := "NO_ID_FOUND"
+        if a.Manifest != nil {
+            id = a.Manifest.InstanceId
+        }
+        logging.Error("Parse failed from app %s: %s", id, err.Error())
         return newFailedCommandStrategy(a, message, err.Error()), false
     }
     return ret, true

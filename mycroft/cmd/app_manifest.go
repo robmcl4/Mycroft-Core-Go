@@ -3,10 +3,10 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "github.com/coreos/go-semver/semver"
     "github.com/nu7hatch/gouuid"
     "errors"
-    "log"
     "fmt"
 )
 
@@ -15,16 +15,16 @@ func (c *commandStrategy) appManifest() (bool) {
     c.app.RWMutex.Lock()
     defer c.app.RWMutex.Unlock()
 
-    log.Println("Parsing application's manifest")
+    logging.Debug("Parsing application's manifest")
 
     man, err := decodeManifest(c.body)
     if err != nil {
-        log.Printf("ERROR: app's manifest is invalid: %s", err)
+        logging.Error("App's manifest is invalid: %s", err)
         sendManifestFail(c.app, err.Error())
         return false
     }
     if _, exists := registry.GetInstance(man.InstanceId); exists {
-        log.Printf("ERROR: app's instance id is already taken: %s", man.InstanceId)
+        logging.Error("App's instance id is already taken: %s", man.InstanceId)
         sendManifestFail(c.app, fmt.Sprintf("instanceId %s is in use", man.InstanceId))
         return false
     }
@@ -32,6 +32,7 @@ func (c *commandStrategy) appManifest() (bool) {
     c.app.Manifest = man
     registry.Register(c.app)
     sendManifestOkAndDependencies(c.app)
+    logging.Info("App '%s' now connected with manifest parsed", c.app.Manifest.InstanceId)
     return true
 }
 

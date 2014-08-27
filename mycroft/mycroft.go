@@ -10,7 +10,7 @@ import (
 
 // main parses command-line arguments and spawns a new server
 func main() {
-    logging.SetupLogging(logging.DEBUG)
+    logging.SetLevel(logging.DEBUG)
 
     no_tls := flag.Bool("no-tls", false, "Whether to use TLS, default false")
     crt_path := flag.String("crt", "cert.crt", "Path to the TLS certificate, default `cert.crt`")
@@ -25,12 +25,12 @@ func main() {
         logging.Warning("not using TLS")
         err := srv.StartListen(1847, false, "", "", "")
         if err != nil {
-            logging.Fatal("Could not start server: %s", err.Error())
+            logging.Fatal("Could not start server: ", err.Error())
         }
     } else {
         err := srv.StartListen(1847, true, *crt_path, *key_path, *sname)
         if err != nil {
-            logging.Fatal("Could not start server: %s", err.Error())
+            logging.Fatal("Could not start server: ", err.Error())
         }
     }
 }

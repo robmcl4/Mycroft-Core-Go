@@ -12,31 +12,36 @@ type Level logging.Level
 
 const (
     CRITICAL Level = Level(logging.CRITICAL)
-    ERROR Level = Level(logging.ERROR)
-    WARNING Level = Level(logging.WARNING)
-    NOTICE Level = Level(logging.NOTICE)
-    INFO Level = Level(logging.INFO)
-    DEBUG Level = Level(logging.DEBUG)
+    ERROR Level    = Level(logging.ERROR)
+    WARNING Level  = Level(logging.WARNING)
+    NOTICE Level   = Level(logging.NOTICE)
+    INFO Level     = Level(logging.INFO)
+    DEBUG Level    = Level(logging.DEBUG)
 )
 
 
 var log = logging.MustGetLogger("mycroft")
-var Debug = log.Debug
-var Info  = log.Info
-var Notice = log.Notice
-var Warning = log.Warning
-var Error = log.Error
-var Critical = log.Critical
-var Fatal = log.Fatal
 
 
-func SetupLogging(level Level) {
-    logging.SetLevel(logging.Level(level), "mycroft")
+var (
+    Debug    = log.Debug
+    Info     = log.Info
+    Notice   = log.Notice
+    Warning  = log.Warning
+    Error    = log.Error
+    Critical = log.Critical
+    Fatal    = log.Fatal
+)
 
-    format := `%{color}%{time:15:04:05.000000} %{level:.4s} %{id:04x}%{color:reset} | %{message}`
+
+func init() {
+    logging.SetLevel(logging.DEBUG, "mycroft")
+
+    format := `%{time:15:04:05.000000} %{level:.4s} %{id:04x} | %{message}`
     logging.SetFormatter(logging.MustStringFormatter(format))
 
     consoleBackend := logging.NewLogBackend(os.Stderr, "", 0)
+    consoleBackend.Color = true
     logging.SetBackend(consoleBackend)
     log.Debug("Console logging enabled")
 
@@ -47,19 +52,17 @@ func SetupLogging(level Level) {
         return
     }
     path := filepath.Join("log", "log")
-    file, err := os.OpenFile(path,
-                             os.O_WRONLY|os.O_APPEND|os.O_CREATE,
-                             0660)
+    fileWriter, err := os.OpenFile(path,
+                                   os.O_WRONLY|os.O_APPEND|os.O_CREATE,
+                                   0660)
     if err != nil {
         log.Error("could not open log file: %s", err.Error())
         return
     }
 
-    format = `%{time:15:04:05.000000} %{level:.4s} %{id:04x} | %{message}`
-    logging.SetFormatter(logging.MustStringFormatter(format))
-    fileBackend := logging.NewLogBackend(file, "", 0)
-
-    logging.MultiLogger(fileBackend, consoleBackend)
+    fileBackend := logging.NewLogBackend(fileWriter, "", 0)
+    fileBackend.Color = false
+    logging.SetBackend(logging.MultiLogger(consoleBackend, fileBackend))
     log.Debug("File backend enabled")
 }
 
