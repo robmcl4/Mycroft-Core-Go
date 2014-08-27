@@ -3,7 +3,7 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
-    "log"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
 )
 
@@ -14,7 +14,7 @@ func (c *commandStrategy) msgBroadcast() (error) {
     var id string
     content := c.body["content"]
 
-    log.Printf("Sending message broadcast from %s\n", c.app.Manifest.InstanceId)
+    logging.Debug("Sending message broadcast from %s", c.app.Manifest.InstanceId)
 
     if id_, ok := getString(c.body, "id"); ok {
         id = id_

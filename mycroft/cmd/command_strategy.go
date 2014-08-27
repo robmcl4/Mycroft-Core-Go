@@ -2,6 +2,7 @@ package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "encoding/json"
     "fmt"
 )
@@ -56,6 +57,11 @@ func (c *commandStrategy) Execute() (bool) {
     }
 
     if err != nil {
+        id := "NO_ID_FOUND"
+        if c.app.Manifest != nil {
+            id = c.app.Manifest.InstanceId
+        }
+        logging.Error("Application %s had command error %s", id, err.Error())
         b, _ := json.Marshal(c.body)
         return newFailedCommandStrategy(c.app, string(b), err.Error()).Execute()
     }

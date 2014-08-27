@@ -2,8 +2,8 @@ package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
-    "log"
 )
 
 
@@ -11,7 +11,7 @@ func (c *commandStrategy) msgQueryFail() (error) {
     c.app.RWMutex.RLock()
     defer c.app.RWMutex.RUnlock()
 
-    log.Printf("Sending message query fail from %s", c.app.Manifest.InstanceId)
+    logging.Debug("Sending message query fail from %s", c.app.Manifest.InstanceId)
     var id, message string
 
     if id_, ok := getString(c.body, "id"); ok {
@@ -33,7 +33,9 @@ func (c *commandStrategy) msgQueryFail() (error) {
     if recipient, ok := msg_archive.GetMsg(id); ok {
         recipient.Send("MSG_QUERY_FAIL", body)
     } else {
-        log.Printf("Warning: unrecognized message id %s\n", id)
+        logging.Warning("unrecognized message query id %s from app %s",
+                        id,
+                        c.app.Manifest.InstanceId)
     }
     return nil
 }

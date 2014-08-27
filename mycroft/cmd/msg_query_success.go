@@ -2,7 +2,7 @@ package cmd
 
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
-    "log"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
 )
 
@@ -11,7 +11,7 @@ func (c *commandStrategy) msgQuerySuccess() (error) {
     c.app.RWMutex.RLock()
     defer c.app.RWMutex.RUnlock()
 
-    log.Printf("Replying to message from app %s\n", c.app.Manifest.InstanceId)
+    logging.Debug("Replying to message from app %s", c.app.Manifest.InstanceId)
 
     var id string
     if id_, ok := getString(c.body, "id"); ok {
@@ -29,7 +29,9 @@ func (c *commandStrategy) msgQuerySuccess() (error) {
     if recipient, ok := msg_archive.GetMsg(id); ok {
         recipient.Send("MSG_QUERY_SUCCESS", body)
     } else {
-        log.Printf("Warning: no app found to reply to for query id %s\n", id)
+        logging.Warning("unrecognized message query id %s from app %s",
+                        id,
+                        c.app.Manifest.InstanceId)
     }
     return nil
 }

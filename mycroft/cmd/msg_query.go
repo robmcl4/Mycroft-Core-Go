@@ -1,9 +1,9 @@
 package cmd
 
 import (
-    "log"
     "errors"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry/msg_archive"
 )
@@ -89,7 +89,7 @@ func (c *commandStrategy) msgQuery() (error) {
     c.app.RWMutex.RLock()
     defer c.app.RWMutex.RUnlock()
 
-    log.Printf("Processing query from %s\n", c.app.Manifest.InstanceId)
+    logging.Debug("Processing query from %s", c.app.Manifest.InstanceId)
     mq, err := parseMsgQuery(c)
     if err != nil {
         return err

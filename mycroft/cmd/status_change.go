@@ -3,7 +3,7 @@ package cmd
 import (
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/app"
     "github.com/robmcl4/Mycroft-Core-Go/mycroft/registry"
-    "log"
+    "github.com/robmcl4/Mycroft-Core-Go/mycroft/logging"
     "errors"
 )
 
@@ -39,7 +39,7 @@ func (c *commandStrategy) statusChange() (error) {
         c.app.Priority = priority
 
         if c.app.Manifest != nil {
-            log.Printf("Changing status of %s to '%s'\n", c.app.Manifest.InstanceId, c.app.StatusString())
+            logging.Info("Changing status of %s to '%s'\n", c.app.Manifest.InstanceId, c.app.StatusString())
             sendDependencyNotice(c.app)
         }
         c.app.RWMutex.Unlock()
