@@ -24,7 +24,18 @@ This is a full git repository, edit the code here and commit changes here.
 
 A binary was also built as a part of `go get`, which is available in `$GOPATH/bin`
 
+
+Building
+--------
+
+Build using `go install`. This can take two forms:
+
+1. If the current working directory is within the Mycroft-Core-Go git repository, run
+   `go install ./...`
+2. Otherwise, use `go install github.com/robmcl4/Mycroft-Core-Go/mycroft`
+
+
 Running
 -------
 
-After building, run with the command `$GOPATH/bin/mycroft`.
+After building, run with the command `$GOPATH/bin/mycroft`. Use the `--help` option for argument usage.
